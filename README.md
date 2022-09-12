@@ -1,11 +1,13 @@
 # Neural Network in C
 
-:warning: _Run the application on the same directory as the matrices folder, otherwise it will not read the data._
+:warning: _Run the application on the same directory as the matrices folder, otherwise it will not read the data._\
+:warning: _Some of the formulas below are not displaying correctly. Will fix it soon._
 
 ## References
 
 The logic and structure of the program were based on [this](https://pabloinsente.github.io/the-multilayer-perceptron) absolutely great tutorial by https://github.com/pabloinsente on how to develop an implementation of a multilayer perceptron in python by using matrix operations.\
-Also, [this](http://neuralnetworksanddeeplearning.com/index.html) online book on Neural Networks by https://github.com/mnielsen was of incredible help on the understanding of the calculations involved in the backpropagation algorithm.
+Also, [this](http://neuralnetworksanddeeplearning.com/index.html) online book on Neural Networks by https://github.com/mnielsen was of incredible help on the understanding of the calculations involved in the backpropagation algorithm.\
+The _eldritch_arrays.h_ functions for matrix operations were based on [this](https://www.andreinc.net/2021/01/20/writing-your-own-linear-algebra-matrix-library-in-c) tutorial, by https://github.com/nomemory. Easy to follow and renewed my interest in some linear algebra concepts.
 
 ##
 
