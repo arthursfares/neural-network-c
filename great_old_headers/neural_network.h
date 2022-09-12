@@ -94,15 +94,16 @@ parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons,
             params.W1 = add_matrices(new_W1, multiply_by_scaler(W1_variation, alpha));
             // update hidden bias
             params.b1 = subtract_matrices(params.b1, multiply_by_scaler(delta1, eta));
+            // free allocated memory !!!
+            free_matrix(X); free_matrix(y);
+            free_matrix(Z1); free_matrix(S1); free_matrix(Z2); free_matrix(S2);
+            free_matrix(ones_S2); free_matrix(ones_S1);
+            free_matrix(delta2); free_matrix(W2_gradients); free_matrix(delta1); free_matrix(W1_gradients);
+            free_matrix(new_W2); free_matrix(new_W1);
+            free_matrix(W2_variation); free_matrix(W1_variation);
         } // END of targets iterations
         printf("iteration %d -> error = %.4f\n", iteration, errors[iteration]);
     } // END of epochs iterations
-    free_matrix(X); free_matrix(y);
-    free_matrix(Z1); free_matrix(S1); free_matrix(Z2); free_matrix(S2);
-    free_matrix(ones_S2); free_matrix(ones_S1);
-    free_matrix(delta2); free_matrix(W2_gradients); free_matrix(delta1); free_matrix(W1_gradients);
-    free_matrix(new_W2); free_matrix(new_W1);
-    free_matrix(W2_variation); free_matrix(W1_variation);
     // return learned parameters
     return params;
 }
