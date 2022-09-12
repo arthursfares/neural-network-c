@@ -114,14 +114,8 @@ matrix *predict(matrix *input, parameters learned_parameters) {
     S1 = sigmoid_function(Z1);
     Z2 = linear_function(learned_parameters.W2, S1, learned_parameters.b2);
     S2 = sigmoid_function(Z2);
-    result = create_matrix(S2->n_rows, S2->n_cols);
-    for (int row = 0; row < result->n_rows; row++) {
-        for (int col = 0; col < result->n_cols; col++) {
-            result->data[row][col] = (S2->data[row][col] >= 0.5) ? 1.0 : 0.0;
-        }
-    }
-    free_matrix(Z1); free_matrix(S1); free_matrix(Z2); free_matrix(S2);
-    return result;
+    free_matrix(Z1); free_matrix(S1); free_matrix(Z2); 
+    return S2;
 }
 
 #endif
