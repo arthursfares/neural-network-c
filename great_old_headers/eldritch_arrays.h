@@ -276,7 +276,7 @@ bool _swipe_rows(matrix *mat, unsigned int row1, unsigned int row2) {
         printf("[!] invalid row index\n");
         return false;
     }
-    double *temp = mat->data[ro2];
+    double *temp = mat->data[row2];
     mat->data[row2] = mat->data[row1];
     mat->data[row1] = temp;
     return true;
