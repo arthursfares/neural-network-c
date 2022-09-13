@@ -36,6 +36,10 @@ matrix *subtract_matrices(matrix* A, matrix *B);
 bool _add_matrices(matrix* A, matrix *B);
 matrix *multiply_matrices(matrix *A, matrix *B);
 matrix *hadamard_product(matrix *A, matrix* B);
+bool _swipe_columns(matrix *mat, unsigned int col1, unsigned int col2);
+matrix *swipe_columns(matrix *mat, unsigned int col1, unsigned int col2);
+bool _swipe_rows(matrix *mat, unsigned int row1, unsigned int row2);
+matrix *swipe_rows(matrix *mat, unsigned int row1, unsigned int row2);
 
 
 matrix *create_matrix(unsigned int n_rows, unsigned int n_cols) {
@@ -232,5 +236,50 @@ matrix *hadamard_product(matrix *A, matrix* B) {
     }
     return result;
 }
+
+bool _swipe_columns(matrix *mat, unsigned int col1, unsigned int col2) {
+    if (col1 >= mat->n_cols || col2 >= mat->n_cols) {
+        printf("[!] invalid column index\n");
+        return false;
+    }
+    double temp;
+    for (size_t row = 0; row < mat->n_rows; row++) {
+        temp = mat->data[row][col1];
+        mat->data[row][col1] = mat->data[row][col2];
+        mat->data[row][col2] = temp;
+    }
+    return true;
+}
+
+matrix *swipe_columns(matrix *mat, unsigned int col1, unsigned int col2) {
+    matrix *result = copy_matrix(mat);
+    if (!_swipe_columns(result, col1, col2)) {
+        free_matrix(result);
+        return NULL;
+    }
+    return result;
+}
+
+bool _swipe_rows(matrix *mat, unsigned int row1, unsigned int row2) {
+    if (row1 >= mat->n_rows || row2 >= mat->n_rows) {
+        printf("[!] invalid row index\n");
+        return false;
+    }
+    double *temp = mat->data[ro2];
+    mat->data[row2] = mat->data[row1];
+    mat->data[row1] = temp;
+    return true;
+}
+
+matrix *swipe_rows(matrix *mat, unsigned int row1, unsigned int row2) {
+    matrix *result = copy_matrix(mat);
+    if (!_swipe_rows(result, row1, row2)) {
+        free_matrix(result);
+        return NULL;
+    }
+    return result;
+}
+
+
 
 #endif
