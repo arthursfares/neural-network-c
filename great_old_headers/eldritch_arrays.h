@@ -20,6 +20,7 @@ void free_matrix(matrix *mat);
 matrix *copy_matrix(matrix *mat);
 double get_random_number_from_range(double min, double max);
 matrix *create_random_matrix(unsigned int n_rows, unsigned int n_cols, double min, double max);
+matrix *create_identity_matrix(unsigned int n_rows, unsigned int n_cols);
 matrix *read_matrix_from_file(const char *file_path);
 matrix *_read_matrix_from_file(FILE *file);
 matrix *create_ones_matrix(unsigned int n_rows, unsigned int n_cols);
@@ -87,6 +88,16 @@ matrix *create_random_matrix(unsigned int n_rows, unsigned int n_cols, double mi
     for (int row = 0; row < n_rows; row++) {
         for (int col = 0; col < n_cols; col++) {
             mat->data[row][col] = get_random_number_from_range(min, max);
+        }
+    }
+    return mat;
+}
+
+matrix *create_identity_matrix(unsigned int n_rows, unsigned int n_cols) {
+    matrix *mat = create_matrix(n_rows, n_cols);
+    for (int row = 0; row < mat->n_rows; row++) {
+        for (int col = 0; col < mat->n_cols; col++) {
+            mat->data[row][col] = (row == col) ? 1.0 : 0.0;
         }
     }
     return mat;
