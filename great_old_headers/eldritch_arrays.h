@@ -22,13 +22,16 @@ double get_random_number_from_range(double min, double max);
 matrix *create_random_matrix(unsigned int n_rows, unsigned int n_cols, double min, double max);
 matrix *read_matrix_from_file(const char *file_path);
 matrix *_read_matrix_from_file(FILE *file);
+bool save_matrix_to_file(const char *file_path, matrix *mat);
 matrix *create_ones_matrix(unsigned int n_rows, unsigned int n_cols);
 matrix *create_identity_matrix(unsigned int n_rows, unsigned int n_cols);
+matrix *create_permutation_matrix(unsigned int n_rows, unsigned int n_cols);
 void print_matrix_formatted(matrix* mat, const char *format);
 void print_matrix(matrix *mat);
 matrix *transpose(matrix *mat);
 matrix *get_col(matrix *original_mat, unsigned int col);
 matrix *get_row(matrix *original_mat, unsigned int row);
+matrix *get_sub_matrix(matrix *original_mat, unsigned int row1, unsigned int row2, unsigned int col1, unsigned int col2);
 matrix *multiply_by_scaler(matrix* mat, double scaler);
 void _multiply_by_scaler(matrix* mat, double scaler);
 bool do_matrices_have_same_dimensions(matrix *A, matrix *B);
@@ -41,6 +44,7 @@ bool _swipe_columns(matrix *mat, unsigned int col1, unsigned int col2);
 matrix *swipe_columns(matrix *mat, unsigned int col1, unsigned int col2);
 bool _swipe_rows(matrix *mat, unsigned int row1, unsigned int row2);
 matrix *swipe_rows(matrix *mat, unsigned int row1, unsigned int row2);
+bool are_matrices_equal (matrix *A, matrix*B);
 
 
 matrix *create_matrix(unsigned int n_rows, unsigned int n_cols) {
@@ -116,6 +120,21 @@ matrix *_read_matrix_from_file(FILE *file) {
     return mat;
 }
 
+bool save_matrix_to_file(const char *file_path, matrix* mat) {
+    FILE *fp = fopen(file_path, "w");
+    if (fp == NULL) { printf("[!] could not open file for writting\n"); return false; }
+    fprintf(fp, "%d %d\n", mat->n_rows, mat->n_cols);
+    for (int row = 0; row < mat->n_rows; row++) {
+        for (int col = 0; col < mat->n_cols; col++) {
+            if (col != mat->n_cols-1) fprintf(fp, "%lf\t", mat->data[row][col]);
+            else fprintf(fp, "%lf", mat->data[row][col]);
+        }
+        if (row != mat->n_rows-1) fprintf(fp, "\n");
+    }
+    fclose(fp);
+    return true;
+}
+
 matrix *create_ones_matrix(unsigned int n_rows, unsigned int n_cols) {
     matrix *result = create_matrix(n_rows, n_cols);
     for (int row = 0; row < result->n_rows; row++) {
@@ -134,6 +153,20 @@ matrix *create_identity_matrix(unsigned int n_rows, unsigned int n_cols) {
         }
     }
     return mat;
+}
+
+matrix *create_permutation_matrix(unsigned int n_rows, unsigned int n_cols) {
+    // prmt x M    = M w/ rows swipped
+    // M    x prmt = M w/ cols swipped
+    matrix *permutation_mat = create_identity_matrix(n_rows, n_cols);
+    // permutation matrix is created by shuffling the rows a identity matrix
+    for (size_t row = 0; row < n_rows; row++) {
+        size_t rand_row = row + rand() / (RAND_MAX / (n_rows - row) + 1);
+	    double *temp = permutation_mat->data[rand_row];
+	    permutation_mat->data[rand_row] = permutation_mat->data[row];
+	    permutation_mat->data[row] = temp;
+    }
+    return permutation_mat;
 }
 
 void print_matrix_formatted(matrix* mat, const char *format) {
@@ -176,6 +209,18 @@ matrix *get_row(matrix *original_mat, unsigned int target_row) {
     // memory per row is contiguous, no loops needed
     memcpy(mat->data[0], original_mat->data[target_row], original_mat->n_cols * sizeof(*mat->data[0]));
     return mat;
+}
+
+matrix *get_sub_matrix(matrix *original_mat, unsigned int row1, unsigned int row2, unsigned int col1, unsigned int col2) {
+    if (row1 < 0 || col1 < 0) { printf("[!] can not have negative indices\n"); return NULL; }
+    if (row2 < row1 || col2 < col1) { printf("[!] indices 2 must be grater than indices 1\n"); return NULL; }
+    matrix *result = create_matrix(row2-row1+1, col2-col1+1);
+    for (int row = 0; row < result->n_rows; row++) {
+        for (int col = 0; col < result->n_cols; col++) {
+            result->data[row][col] = original_mat->data[row1+row][col1+col];
+        }
+    }
+    return result;
 }
 
 matrix *multiply_by_scaler(matrix* mat, double scaler) {
@@ -291,6 +336,14 @@ matrix *swipe_rows(matrix *mat, unsigned int row1, unsigned int row2) {
     return result;
 }
 
-
+bool are_matrices_equal (matrix *A, matrix*B) {
+    if (A->n_rows != B->n_rows || A->n_cols != B->n_cols) return false;
+    for (size_t row = 0; row < A->n_rows; row++) {
+        for (size_t col = 0; col < A->n_cols; col++) {
+            if (A->data[row][col] != B->data[row][col]) return false;
+        }
+    }
+    return true;
+}
 
 #endif
