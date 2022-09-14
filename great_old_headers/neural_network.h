@@ -7,6 +7,8 @@
 
 typedef struct parameters_s { matrix *W1, *b1, *W2, *b2; } parameters;
 
+double linear_scaling_normalization(double x, double x_max, double x_min);
+void scale_row_linearly(matrix *mat, unsigned int row, double max, double min);
 parameters init_parameters(int n_features, int n_neurons, int n_output);
 matrix *linear_function(matrix *W, matrix *X, matrix *b);
 double sigmoid_function_d(double n);
@@ -15,6 +17,16 @@ float cost_function(matrix *S, matrix *y);
 parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons, int n_outputs, int n_iterations, float eta, float alpha);
 matrix *predict(matrix *input, parameters learned_parameters);
 
+
+double linear_scaling_normalization(double x, double x_max, double x_min) {
+    return (x - x_min) / (x_max - x_min);
+}
+
+void scale_row_linearly(matrix *mat, unsigned int row, double max, double min) {
+    for (size_t col = 0; col < mat->n_cols; col++) {
+        mat->data[row][col] = linear_scaling_normalization(mat->data[row][col], max, min);
+    }
+}
 
 parameters init_parameters(int n_features, int n_neurons, int n_output) {
     matrix *W1 = create_random_matrix(n_neurons, n_features, 0, 1);
