@@ -4,11 +4,11 @@
 #include "neural_network.h"
 
 const int   N_FEATURES = 4;
-const int   N_NEURONS  = 4;
-const int   N_OUTPUT   = 1;
-const int   ITERATIONS = 3000;
-const float ETA        = 0.1;
-const float ALPHA      = 0.1;
+const int   N_NEURONS  = 4;  // test (N_FEATURES/2)+1 for better results
+const int   N_OUTPUTS  = 3;
+const int   ITERATIONS = 4000;
+const float ETA        = 0.15;
+const float ALPHA      = 0.0;
 
 bool is_file_open(FILE *fp) {
     if (fp == NULL) {
@@ -27,81 +27,157 @@ int main(int argc, const char *argv[]) {
     if (!is_file_open(iris_fp)) return -1;
     // we want to store, for 150 flowers, 4 different data, 
     // the petal's and sepal's widths and heights
-    matrix *features = create_matrix(4, 150); // each column contains all the data for one flower
+    matrix *features = create_matrix(N_FEATURES, 150); // each column contains all the data for one flower
     // the flowers can be setosa (0), versicolor (1) or virginica (2)
-    matrix *targets = create_matrix(1, 150);
+    matrix *targets = create_matrix(N_OUTPUTS, 150);
     // a line utility array will be used to go through the lines of the data file
     // and a string pointer will go through each of the lines comma separeted values.
+    matrix *iris_data = create_matrix(N_FEATURES+N_OUTPUTS, 150);
     char line[50];
     char *sp;
     // now, we read the data and store the wanted values
-    double current_sepal_lenght, current_sepal_width, current_petal_length, current_petal_width, current_classification;
+    double current_sepal_length, current_sepal_width, current_petal_length, current_petal_width;
+    double min_sepal_length=__DBL_MAX__, min_sepal_width=__DBL_MAX__, min_petal_length=__DBL_MAX__, min_petal_width=__DBL_MAX__;
+    double max_sepal_length=0, max_sepal_width=0, max_petal_length=0, max_petal_width=0;
+    // mins and maxes used for latter normalization
+    double setosa, versicolor, virginica;
     char *current_flower_name;
     int current_line_index=0;
     while ( fgets(line, 50, iris_fp) != NULL ) {
         // sepal length
         sp = strtok(line, ","); 
-        current_sepal_lenght = atof(sp);
-        features->data[0][current_line_index] = current_sepal_lenght;
+        current_sepal_length = atof(sp);
+        iris_data->data[0][current_line_index] = current_sepal_length;
+        if (current_sepal_length < min_sepal_length) min_sepal_length = current_sepal_length;
+        if (current_sepal_length > max_sepal_length) max_sepal_length = current_sepal_length; 
         // sepal width
         sp = strtok(NULL, ",");
         current_sepal_width = atof(sp);
-        features->data[1][current_line_index] = current_sepal_width;
+        iris_data->data[1][current_line_index] = current_sepal_width;
+        if (current_sepal_width < min_sepal_width) min_sepal_width = current_sepal_width;
+        if (current_sepal_width > max_sepal_width) max_sepal_width = current_sepal_width;
         // petal length
         sp = strtok(NULL, ",");
         current_petal_length = atof(sp);
-        features->data[2][current_line_index] = current_petal_length;
+        iris_data->data[2][current_line_index] = current_petal_length;
+        if (current_petal_length < min_petal_length) min_petal_length = current_petal_length;
+        if (current_petal_length > max_petal_length) max_petal_length = current_petal_length;
         // petal width
         sp = strtok(NULL, ",");
         current_petal_width = atof(sp);
-        features->data[3][current_line_index] = current_petal_width;
+        iris_data->data[3][current_line_index] = current_petal_width;
+        if (current_petal_width < min_petal_width) min_petal_width = current_petal_width;
+        if (current_petal_width > max_petal_width) max_petal_width = current_petal_width;
         // classification
         sp = strtok(NULL, ",");
         current_flower_name = strdup(sp);
-        if ( strcmp(current_flower_name, "Iris-setosa\n") == 0 ) current_classification = 0.0;
-        else if ( strcmp(current_flower_name, "Iris-versicolor\n") == 0 ) current_classification = 1.0;
-        else if ( strcmp(current_flower_name, "Iris-virginica\n") == 0 ) current_classification = 2.0;
-        else printf("[!] found no match for flower name\n");
-        targets->data[0][current_line_index] = current_classification;
+        setosa = ( strcmp(current_flower_name, "Iris-setosa\n") == 0 ) ? 1.0 : 0.0;
+        versicolor = ( strcmp(current_flower_name, "Iris-versicolor\n") == 0 ) ? 1.0 : 0.0;
+        virginica = ( strcmp(current_flower_name, "Iris-virginica\n") == 0 ) ? 1.0 : 0.0;
+        iris_data->data[4][current_line_index] = setosa;
+        iris_data->data[5][current_line_index] = versicolor;
+        iris_data->data[6][current_line_index] = virginica;
         //update line index
         current_line_index++;
     } // END csv read loop
 
-    // TODO. shffle data.
-    // TODO. standardization
-    // TODO. split data between train and test data.
+    printf("sepal length....\t MIN %.1f\t MAX %.1f\n", min_sepal_length, max_sepal_length);
+    printf("sepal width.....\t MIN %.1f\t MAX %.1f\n", min_sepal_width, max_sepal_width);
+    printf("petal length....\t MIN %.1f\t MAX %.1f\n", min_petal_length, max_petal_length);
+    printf("petal width.....\t MIN %.1f\t MAX %.1f\n", min_petal_width, max_petal_width);
 
-    /* ---------------------------- */
+    save_matrix_to_file("matrices/iris/iris_data.mat", iris_data);
+
+    // SHUFFLE iris_data
+    // ---
+    // matrix *permutation_matrix = create_permutation_matrix(iris_data->n_cols, iris_data->n_rows);
+    // // M x prmt = M w/ cols swipped
+    matrix *iris_data_shuffled = copy_matrix(iris_data);
+    for (size_t col = 0; col < iris_data_shuffled->n_cols; col++) {
+        size_t rand_col = col + rand() / (RAND_MAX / (iris_data_shuffled->n_cols - col) + 1);
+        for (size_t row = 0; row < iris_data_shuffled->n_rows; row++) {
+            double temp = iris_data_shuffled->data[row][rand_col];
+            iris_data_shuffled->data[row][rand_col] = iris_data_shuffled->data[row][col];
+            iris_data_shuffled->data[row][col] = temp;
+        }
+    }
+    save_matrix_to_file("matrices/iris/iris_data_shuffled.mat", iris_data_shuffled);
+    // free_matrix(permutation_matrix);
+    free_matrix(iris_data);
+
+    // GET features AND targets from iris_data_shuffled
+    // ---
+    features = get_sub_matrix(iris_data_shuffled, 0, N_FEATURES-1, 0, 149);
+    save_matrix_to_file("matrices/iris/iris_features.mat", features);
+    targets = get_sub_matrix(iris_data_shuffled, N_FEATURES, N_FEATURES+N_OUTPUTS-1, 0 , 149);
+    save_matrix_to_file("matrices/iris/iris_targets.mat", targets);
+
+    // NORMALIZATION (linear scaling)
+    // x_std = (x - X_MIN) / (X_MAX - X_MIN)
+    // ---
+    scale_row_linearly(features, 0, max_sepal_length, min_sepal_length);
+    scale_row_linearly(features, 1, max_sepal_width, min_sepal_width);
+    scale_row_linearly(features, 2, max_petal_length, min_petal_length);
+    scale_row_linearly(features, 3, max_petal_width, min_petal_width);
+    save_matrix_to_file("matrices/iris/iris_features.mat", features);
+
+    // SPLIT DATA BETWEEN TRAIN AND TEST DATA
+    // ---
+    matrix *features_train = get_sub_matrix(features, 0, features->n_rows-1, 0, features->n_cols-31);
+    matrix *targets_train = get_sub_matrix(targets, 0, targets->n_rows-1, 0, targets->n_cols-31);
+    save_matrix_to_file("matrices/iris/train/features_train.mat", features_train);
+    save_matrix_to_file("matrices/iris/train/targets_train.mat", targets_train);
+    matrix *features_test = get_sub_matrix(features, 0, features->n_rows-1, features->n_cols-30, features->n_cols-1);
+    matrix *targets_test = get_sub_matrix(targets, 0, targets->n_rows-1, targets->n_cols-30, targets->n_cols-1);
+    save_matrix_to_file("matrices/iris/test/features_test.mat", features_test);
+    save_matrix_to_file("matrices/iris/test/targets_test.mat", targets_test);
+
+    // ---
     
     /* TRAIN */
-    parameters learned_parameters = fit(features, targets, N_FEATURES, N_NEURONS, N_OUTPUT, ITERATIONS, ETA, ALPHA);
-    
+    parameters learned_parameters = fit(features_train, targets_train, N_FEATURES, N_NEURONS, N_OUTPUTS, ITERATIONS, ETA, ALPHA);
+    free_matrix(features_train);
+    free_matrix(targets_train);
+
     printf("\n\n----------------------------------------------\n\n");
 
     /* TEST */
-    matrix *input, *output, *result;
-    input = get_col(features, 94);
-    output = predict(input, learned_parameters);
-    // round the output to be equivalent to the classifications
-    result = create_matrix(output->n_rows, output->n_cols);
-    for (size_t row = 0; row < output->n_rows; row++) {
-        for (size_t col = 0; col < output->n_cols; col++) {
-            result->data[row][col] = round(output->data[row][col]);
+    // for every test case, make a prediction
+    // print how many wrong predictions were made
+    int mistakes = 0;
+    matrix *input, *output, *result, *target_col;
+    for (size_t col = 0; col < features_test->n_cols; col++) {
+        printf("test %d --------- \n\n", col);
+        target_col = get_col(targets_test, col);
+        input = get_col(features_test, col);
+        output = predict(input, learned_parameters);
+        result = create_matrix(output->n_rows, output->n_cols);
+        for (size_t i = 0; i < 3; i++) result->data[i][0] = (output->data[i][0] > 0.09) ? 1.0 : 0.0;
+
+        if (!are_matrices_equal(result, target_col)) {
+            mistakes++;
+            printf("\nmistake ate test %d\n", col);
         }
+        
+        // printf("output="); print_matrix(output);
+        printf("result="); print_matrix(result);
+        printf("target="); print_matrix(target_col);
     }
-    // show results
-    printf("input="); print_matrix(input);
-    printf("result="); print_matrix(result);
-    printf("----------------------------------------------\n\n");
+    free_matrix(features_test);
+    free_matrix(targets_test);
+    
+    printf("\n\nMISTAKES AFTER TESTING... %d\n\n", mistakes);
 
     // free allocated memory
     free_matrix(input);
     free_matrix(output);
     free_matrix(result);
+    free_matrix(target_col);
     free_matrix(learned_parameters.W2);
     free_matrix(learned_parameters.b1);
     free_matrix(learned_parameters.W1);
     free_matrix(learned_parameters.b2);
+    free_matrix(iris_data_shuffled);
     free_matrix(targets);
     free_matrix(features);
 
