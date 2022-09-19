@@ -16,7 +16,7 @@ typedef struct matrix_s {
 
 
 matrix *create_matrix(unsigned int n_rows, unsigned int n_cols);
-void free_matrix(matrix *mat);
+void blast_matrix(matrix *mat);
 matrix *copy_matrix(matrix *mat);
 double get_random_number_from_range(double min, double max);
 matrix *create_random_matrix(unsigned int n_rows, unsigned int n_cols, double min, double max);
@@ -63,7 +63,7 @@ matrix *create_matrix(unsigned int n_rows, unsigned int n_cols) {
     return mat;
 }
 
-void free_matrix(matrix *mat) {
+void blast_matrix(matrix *mat) {
     for (int i = 0; i < mat->n_rows; i++) { free(mat->data[i]); }
     free(mat->data);
     free(mat);
@@ -245,14 +245,14 @@ bool do_matrices_have_same_dimensions(matrix *A, matrix *B) {
 
 matrix *add_matrices(matrix* A, matrix *B) {
     matrix *result = copy_matrix(A);
-    if (!_add_matrices(result, B)) { free_matrix(result); return NULL; }
+    if (!_add_matrices(result, B)) { blast_matrix(result); return NULL; }
     return result;
 }
 
 matrix *subtract_matrices(matrix* A, matrix *B) {
     matrix *result = copy_matrix(A);
     B = multiply_by_scaler(B, -1.0);
-    if (!_add_matrices(result, B)) { free_matrix(result); return NULL; }
+    if (!_add_matrices(result, B)) { blast_matrix(result); return NULL; }
     return result;
 }
 
@@ -310,7 +310,7 @@ bool _swipe_columns(matrix *mat, unsigned int col1, unsigned int col2) {
 matrix *swipe_columns(matrix *mat, unsigned int col1, unsigned int col2) {
     matrix *result = copy_matrix(mat);
     if (!_swipe_columns(result, col1, col2)) {
-        free_matrix(result);
+        blast_matrix(result);
         return NULL;
     }
     return result;
@@ -330,7 +330,7 @@ bool _swipe_rows(matrix *mat, unsigned int row1, unsigned int row2) {
 matrix *swipe_rows(matrix *mat, unsigned int row1, unsigned int row2) {
     matrix *result = copy_matrix(mat);
     if (!_swipe_rows(result, row1, row2)) {
-        free_matrix(result);
+        blast_matrix(result);
         return NULL;
     }
     return result;

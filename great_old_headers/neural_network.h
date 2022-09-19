@@ -107,12 +107,12 @@ parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons,
             // update hidden bias
             params.b1 = subtract_matrices(params.b1, multiply_by_scaler(delta1, eta));
             // free allocated memory !!!
-            free_matrix(X); free_matrix(y);
-            free_matrix(Z1); free_matrix(S1); free_matrix(Z2); free_matrix(S2);
-            free_matrix(ones_S2); free_matrix(ones_S1);
-            free_matrix(delta2); free_matrix(W2_gradients); free_matrix(delta1); free_matrix(W1_gradients);
-            free_matrix(new_W2); free_matrix(new_W1);
-            free_matrix(W2_variation); free_matrix(W1_variation);
+            blast_matrix(X); blast_matrix(y);
+            blast_matrix(Z1); blast_matrix(S1); blast_matrix(Z2); blast_matrix(S2);
+            blast_matrix(ones_S2); blast_matrix(ones_S1);
+            blast_matrix(delta2); blast_matrix(W2_gradients); blast_matrix(delta1); blast_matrix(W1_gradients);
+            blast_matrix(new_W2); blast_matrix(new_W1);
+            blast_matrix(W2_variation); blast_matrix(W1_variation);
         } // END of targets iterations
         printf("iteration %d -> error = %.4f\n", iteration, errors[iteration]);
     } // END of epochs iterations
@@ -126,7 +126,7 @@ matrix *predict(matrix *input, parameters learned_parameters) {
     S1 = sigmoid_function(Z1);
     Z2 = linear_function(learned_parameters.W2, S1, learned_parameters.b2);
     S2 = sigmoid_function(Z2);
-    free_matrix(Z1); free_matrix(S1); free_matrix(Z2); 
+    blast_matrix(Z1); blast_matrix(S1); blast_matrix(Z2); 
     return S2;
 }
 

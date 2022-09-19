@@ -103,7 +103,7 @@ int main(int argc, const char *argv[]) {
     }
     save_matrix_to_file("matrices/iris/iris_data_shuffled.mat", iris_data_shuffled);
     // free_matrix(permutation_matrix);
-    free_matrix(iris_data);
+    blast_matrix(iris_data);
 
     // GET features AND targets from iris_data_shuffled
     // ---
@@ -136,8 +136,8 @@ int main(int argc, const char *argv[]) {
     
     /* TRAIN */
     parameters learned_parameters = fit(features_train, targets_train, N_FEATURES, N_NEURONS, N_OUTPUTS, ITERATIONS, ETA, ALPHA);
-    free_matrix(features_train);
-    free_matrix(targets_train);
+    blast_matrix(features_train);
+    blast_matrix(targets_train);
 
     printf("\n\n----------------------------------------------\n\n");
 
@@ -163,23 +163,23 @@ int main(int argc, const char *argv[]) {
         printf("result="); print_matrix(result);
         printf("target="); print_matrix(target_col);
     }
-    free_matrix(features_test);
-    free_matrix(targets_test);
+    blast_matrix(features_test);
+    blast_matrix(targets_test);
     
     printf("\n\nMISTAKES AFTER TESTING... %d\n\n", mistakes);
 
     // free allocated memory
-    free_matrix(input);
-    free_matrix(output);
-    free_matrix(result);
-    free_matrix(target_col);
-    free_matrix(learned_parameters.W2);
-    free_matrix(learned_parameters.b1);
-    free_matrix(learned_parameters.W1);
-    free_matrix(learned_parameters.b2);
-    free_matrix(iris_data_shuffled);
-    free_matrix(targets);
-    free_matrix(features);
+    blast_matrix(input);
+    blast_matrix(output);
+    blast_matrix(result);
+    blast_matrix(target_col);
+    blast_matrix(learned_parameters.W2);
+    blast_matrix(learned_parameters.b1);
+    blast_matrix(learned_parameters.W1);
+    blast_matrix(learned_parameters.b2);
+    blast_matrix(iris_data_shuffled);
+    blast_matrix(targets);
+    blast_matrix(features);
 
     return 0;
 }

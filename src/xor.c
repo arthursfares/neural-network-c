@@ -39,15 +39,14 @@ int main(int argc, const char *argv[]) {
         printf("----------------------------------------------\n\n");
     }
 
-    free_matrix(input);
-    free_matrix(output);
-    free_matrix(result);
-    free_matrix(learned_parameters.W2);
-    free_matrix(learned_parameters.b1);
-    free_matrix(learned_parameters.W1);
-    free_matrix(learned_parameters.b2);
-    free_matrix(targets);
-    free_matrix(features);
+    blast_matrix(input);
+    blast_matrix(output);
+    blast_matrix(learned_parameters.W2);
+    blast_matrix(learned_parameters.b1);
+    blast_matrix(learned_parameters.W1);
+    blast_matrix(learned_parameters.b2);
+    blast_matrix(targets);
+    blast_matrix(features);
 
     return 0;
 }
