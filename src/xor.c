@@ -37,6 +37,7 @@ int main(int argc, const char *argv[]) {
         printf("input="); print_matrix(input);
         printf("result="); print_matrix(result);
         printf("----------------------------------------------\n\n");
+        blast_matrix(result);
     }
 
     blast_matrix(input);
