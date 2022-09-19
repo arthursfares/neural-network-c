@@ -145,6 +145,7 @@ int main(int argc, const char *argv[]) {
     // for every test case, make a prediction
     // print how many wrong predictions were made
     int mistakes = 0;
+    double loss = 0;
     matrix *input, *output, *result, *target_col;
     for (size_t col = 0; col < features_test->n_cols; col++) {
         printf("test %d --------- \n\n", col);
@@ -152,27 +153,50 @@ int main(int argc, const char *argv[]) {
         input = get_col(features_test, col);
         output = predict(input, learned_parameters);
         result = create_matrix(output->n_rows, output->n_cols);
-        for (size_t i = 0; i < 3; i++) result->data[i][0] = (output->data[i][0] > 0.09) ? 1.0 : 0.0;
 
+        // get the index of the biggest result and ground truth index 
+        int index_of_highest = 0;
+        int index_of_ground_truth = 0;
+        double highest_value = output->data[0][0];
+        for (size_t i = 1; i < 3; i++) {
+            if (output->data[i][0] > highest_value) {
+                index_of_highest = i;
+                highest_value = output->data[i][0];
+            }
+            if (target_col->data[i][0] == 1.0) index_of_ground_truth = i;
+        }
+        for (size_t i = 0; i < 3; i++) {
+            result->data[i][0] = (output->data[i][0] == highest_value) ? 1.0 : 0.0;
+        }
+
+        // calculate mistakes for accuracy
         if (!are_matrices_equal(result, target_col)) {
             mistakes++;
             printf("\nmistake ate test %d\n", col);
         }
+
+        // add up to loss
+        double current_loss_entry = output->data[index_of_ground_truth][0];
+        loss += log(current_loss_entry);
         
         // printf("output="); print_matrix(output);
         printf("result="); print_matrix(result);
         printf("target="); print_matrix(target_col);
+
+        blast_matrix(result);
+        blast_matrix(target_col);
+        blast_matrix(input);
+        blast_matrix(output);
     }
     blast_matrix(features_test);
     blast_matrix(targets_test);
     
-    printf("\n\nMISTAKES AFTER TESTING... %d\n\n", mistakes);
+    printf("\n\n----------------------------------------------\n\n");
+    printf("\n\naccuracy... %d\n\n", (30-mistakes));
+    printf("\n\naccuracy %%... %.3f%%\n\n", 100.0*((30.0-(double)mistakes)/30.0));
+    printf("loss... %.3f\n\n", -loss);
 
     // free allocated memory
-    blast_matrix(input);
-    blast_matrix(output);
-    blast_matrix(result);
-    blast_matrix(target_col);
     blast_matrix(learned_parameters.W2);
     blast_matrix(learned_parameters.b1);
     blast_matrix(learned_parameters.W1);
