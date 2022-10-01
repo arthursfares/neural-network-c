@@ -99,9 +99,13 @@ parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons,
             /* COST CALCULATION */
             errors[iteration] += cost_function(S2, y);
             /* BACKPROPAGATION */
-            // update output weights
+            // calculate output delta
             ones_S2 = create_ones_matrix(S2->n_rows, S2->n_cols);
             delta2 = hadamard_product(subtract_matrices(S2, y), hadamard_product(S2, subtract_matrices(ones_S2, S2)));
+            //calculate hidden delta
+            ones_S1 = create_ones_matrix(S1->n_rows, S1->n_cols);
+            delta1 = hadamard_product(multiply_matrices(transpose(params.W2), delta2), hadamard_product(S1, subtract_matrices(ones_S1, S1)));
+            // update output weights
             W2_gradients = multiply_matrices(delta2, transpose(S1));
             new_W2 = subtract_matrices(params.W2, multiply_by_scaler(W2_gradients, eta));
             W2_variation = subtract_matrices(new_W2, params.W2);
@@ -109,8 +113,6 @@ parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons,
             // update output bias
             params.b2 = subtract_matrices(params.b2, multiply_by_scaler(delta2, eta));
             // update hidden weights
-            ones_S1 = create_ones_matrix(S1->n_rows, S1->n_cols);
-            delta1 = hadamard_product(multiply_matrices(transpose(params.W2), delta2), hadamard_product(S1, subtract_matrices(ones_S1, S1)));
             W1_gradients = multiply_matrices(delta1, transpose(X));
             new_W1 = subtract_matrices(params.W1, multiply_by_scaler(W1_gradients, eta));
             W1_variation = subtract_matrices(new_W1, params.W1);
