@@ -12,6 +12,11 @@ add_executable(iris
     great_old_headers/eldritch_arrays.h
     great_old_headers/neural_network.h
 )
+add_executable(multilayer_xor
+    src/multilayer_xor.c
+    great_old_headers/eldritch_arrays.h
+    great_old_headers/neural_network.h
+)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
