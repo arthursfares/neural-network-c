@@ -8,7 +8,6 @@ const int   N_NEURONS  = 4;  // test (N_FEATURES/2)+1 for better results
 const int   N_OUTPUTS  = 3;
 const int   ITERATIONS = 4000;
 const float ETA        = 0.15;
-const float ALPHA      = 0.0;
 
 bool is_file_open(FILE *fp) {
     if (fp == NULL) {
@@ -135,7 +134,7 @@ int main(int argc, const char *argv[]) {
     // ---
     
     /* TRAIN */
-    parameters learned_parameters = fit(features_train, targets_train, N_FEATURES, N_NEURONS, N_OUTPUTS, ITERATIONS, ETA, ALPHA);
+    parameters learned_parameters = fit(features_train, targets_train, N_FEATURES, N_NEURONS, N_OUTPUTS, ITERATIONS, ETA);
     blast_matrix(features_train);
     blast_matrix(targets_train);
 

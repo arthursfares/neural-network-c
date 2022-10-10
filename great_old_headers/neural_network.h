@@ -17,7 +17,7 @@ matrix *linear_function(matrix *W, matrix *X, matrix *b);
 double sigmoid_function_d(double n);
 matrix *sigmoid_function(matrix* Z);
 float cost_function(matrix *S, matrix *y);
-parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons, int n_outputs, int n_iterations, float eta, float alpha);
+parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons, int n_outputs, int n_iterations, float eta);
 matrix *predict(matrix *input, parameters learned_parameters);
 layer_parameters *multilayer_fit(matrix *features, matrix* targets, size_t network_data_size, int *network_data, int n_iterations, float eta);
 matrix *multilayer_predict(matrix *input, size_t network_data_size, layer_parameters *learned_parameters);
@@ -49,7 +49,10 @@ layer_parameters init_layer_parameters(unsigned int W_rows, unsigned int W_cols,
 }
 
 matrix *linear_function(matrix *W, matrix *X, matrix *b) {
-    return add_matrices(multiply_matrices(W, X), b);
+    matrix *W_times_X = multiply_matrices(W, X);
+    matrix *result = add_matrices(W_times_X, b);
+    blast_matrix(W_times_X);
+    return result;
 }
 
 double sigmoid_function_d(double n) {
@@ -78,12 +81,40 @@ float cost_function(matrix *S, matrix *y) {
     return 0.5f * sum_squared_error;
 }
 
-parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons, int n_outputs, int n_iterations, float eta, float alpha) {
+
+
+#pragma region FIT_HELPER_FUNCTIONS
+
+matrix *calculate_output_delta(matrix *S2, matrix *y) {
+    matrix *ones_S2 = create_ones_matrix(S2->n_rows, S2->n_cols);
+    matrix *ones_S2_minus_S2 = subtract_matrices(ones_S2, S2);
+    matrix *sigmoid_derivative = hadamard_product(S2, ones_S2_minus_S2);
+    matrix *S2_minus_y = subtract_matrices(S2, y);
+    matrix *output_delta = hadamard_product(S2_minus_y, sigmoid_derivative);
+    blast_matrix(ones_S2); blast_matrix(ones_S2_minus_S2); blast_matrix(sigmoid_derivative); blast_matrix(S2_minus_y);
+    return output_delta;
+}
+
+matrix *calculate_hidden_delta(matrix *S1, matrix *W2, matrix *delta2) {
+    matrix *ones_S1 = create_ones_matrix(S1->n_rows, S1->n_cols);
+    matrix *ones_S1_minus_S1 = subtract_matrices(ones_S1, S1);
+    matrix *sigmoid_derivative = hadamard_product(S1, ones_S1_minus_S1);
+    matrix *W2_transpose = transpose(W2);
+    matrix *W2_transpose_times_delta2 = multiply_matrices(W2_transpose, delta2);
+    matrix *hidden_delta = hadamard_product(W2_transpose_times_delta2, sigmoid_derivative);
+    blast_matrix(ones_S1); blast_matrix(ones_S1_minus_S1); blast_matrix(sigmoid_derivative);
+    blast_matrix(W2_transpose); blast_matrix(W2_transpose_times_delta2);
+    return hidden_delta;
+}
+
+#pragma endregion FIT_HELPER_FUNCTIONS
+
+parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons, int n_outputs, int n_iterations, float eta) {
     matrix *X, *y, *Z1, *S1, *Z2, *S2;
-    matrix *ones_S2, *ones_S1;
     matrix *delta2, *W2_gradients, *delta1, *W1_gradients; 
-    matrix *new_W2, *new_W1;
-    matrix *W2_variation, *W1_variation;
+    matrix *S1_transpose, *X_transpose;
+    matrix *W2_gradients_scaled, *delta2_scaled, *W1_gradients_scaled, *delta1_scaled;
+    matrix *old_W2, *old_b2, *old_W1, *old_b1;
     parameters params = init_parameters(n_features, n_neurons, n_outputs);
     float errors[n_iterations];
     for (int iteration = 0; iteration < n_iterations; iteration++) {
@@ -100,32 +131,38 @@ parameters fit(matrix *features, matrix* targets, int n_features, int n_neurons,
             errors[iteration] += cost_function(S2, y);
             /* BACKPROPAGATION */
             // calculate output delta
-            ones_S2 = create_ones_matrix(S2->n_rows, S2->n_cols);
-            delta2 = hadamard_product(subtract_matrices(S2, y), hadamard_product(S2, subtract_matrices(ones_S2, S2)));
+            delta2 = calculate_output_delta(S2, y);
             //calculate hidden delta
-            ones_S1 = create_ones_matrix(S1->n_rows, S1->n_cols);
-            delta1 = hadamard_product(multiply_matrices(transpose(params.W2), delta2), hadamard_product(S1, subtract_matrices(ones_S1, S1)));
+            delta1 = calculate_hidden_delta(S1, params.W2, delta2);
             // update output weights
-            W2_gradients = multiply_matrices(delta2, transpose(S1));
-            new_W2 = subtract_matrices(params.W2, multiply_by_scaler(W2_gradients, eta));
-            W2_variation = subtract_matrices(new_W2, params.W2);
-            params.W2 = add_matrices(new_W2, multiply_by_scaler(W2_variation, alpha));
+            S1_transpose = transpose(S1);
+            W2_gradients = multiply_matrices(delta2, S1_transpose);
+            W2_gradients_scaled = multiply_by_scaler(W2_gradients, eta);
+            old_W2 = params.W2;
+            params.W2 = subtract_matrices(old_W2, W2_gradients_scaled);
             // update output bias
-            params.b2 = subtract_matrices(params.b2, multiply_by_scaler(delta2, eta));
+            delta2_scaled = multiply_by_scaler(delta2, eta);
+            old_b2 = params.b2;
+            params.b2 = subtract_matrices(old_b2, delta2_scaled);
             // update hidden weights
-            W1_gradients = multiply_matrices(delta1, transpose(X));
-            new_W1 = subtract_matrices(params.W1, multiply_by_scaler(W1_gradients, eta));
-            W1_variation = subtract_matrices(new_W1, params.W1);
-            params.W1 = add_matrices(new_W1, multiply_by_scaler(W1_variation, alpha));
+            X_transpose = transpose(X);
+            W1_gradients = multiply_matrices(delta1, X_transpose);
+            W1_gradients_scaled = multiply_by_scaler(W1_gradients, eta);
+            old_W1 = params.W1;
+            params.W1 = subtract_matrices(old_W1, W1_gradients_scaled);
             // update hidden bias
-            params.b1 = subtract_matrices(params.b1, multiply_by_scaler(delta1, eta));
+            delta1_scaled = multiply_by_scaler(delta1, eta);
+            old_b1 = params.b1;
+            params.b1 = subtract_matrices(old_b1, delta1_scaled);
             // free allocated memory !!!
+            blast_matrix(old_W2); blast_matrix(old_b2); blast_matrix(old_W1); blast_matrix(old_b1);
             blast_matrix(X); blast_matrix(y);
             blast_matrix(Z1); blast_matrix(S1); blast_matrix(Z2); blast_matrix(S2);
-            blast_matrix(ones_S2); blast_matrix(ones_S1);
-            blast_matrix(delta2); blast_matrix(W2_gradients); blast_matrix(delta1); blast_matrix(W1_gradients);
-            blast_matrix(new_W2); blast_matrix(new_W1);
-            blast_matrix(W2_variation); blast_matrix(W1_variation);
+            blast_matrix(delta2); 
+            blast_matrix(delta1);
+            blast_matrix(W2_gradients); blast_matrix(W1_gradients);
+            blast_matrix(S1_transpose); blast_matrix(X_transpose);
+            blast_matrix(W2_gradients_scaled), blast_matrix(delta2_scaled), blast_matrix(W1_gradients_scaled), blast_matrix(delta1_scaled);
         } // END of targets iterations
         printf("iteration %d -> error = %.4f\n", iteration, errors[iteration]);
     } // END of epochs iterations
@@ -142,6 +179,8 @@ matrix *predict(matrix *input, parameters learned_parameters) {
     blast_matrix(Z1); blast_matrix(S1); blast_matrix(Z2); 
     return S2;
 }
+
+
 
 layer_parameters *multilayer_fit(matrix *features, matrix* targets, size_t network_data_size, int *network_data, int n_iterations, float eta) {
     size_t learned_parameters_size = network_data_size - 1;

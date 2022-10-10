@@ -5,8 +5,7 @@ const int   N_FEATURES = 2;
 const int   N_NEURONS  = 2;
 const int   N_OUTPUT   = 1;
 const int   ITERATIONS = 5000;
-const float ETA        = 0.1;
-const float ALPHA      = 0.5;
+const float ETA        = 0.5;
 
 int main(int argc, const char *argv[]) {
     srand(time(0));
@@ -17,8 +16,8 @@ int main(int argc, const char *argv[]) {
     matrix *targets = read_matrix_from_file("matrices/targets.mat");
     printf("targets="); print_matrix(targets);
     
-    /* TRAIN */
-    parameters learned_parameters = fit(features, targets, N_FEATURES, N_NEURONS, N_OUTPUT, ITERATIONS, ETA, ALPHA);
+    // /* TRAIN */
+    parameters learned_parameters = fit(features, targets, N_FEATURES, N_NEURONS, N_OUTPUT, ITERATIONS, ETA);
     
     printf("\n\n----------------------------------------------\n\n");
 
@@ -38,16 +37,16 @@ int main(int argc, const char *argv[]) {
         printf("result="); print_matrix(result);
         printf("----------------------------------------------\n\n");
         blast_matrix(result);
+        blast_matrix(input);
+        blast_matrix(output);
     }
 
-    blast_matrix(input);
-    blast_matrix(output);
     blast_matrix(learned_parameters.W2);
     blast_matrix(learned_parameters.b1);
     blast_matrix(learned_parameters.W1);
     blast_matrix(learned_parameters.b2);
-    blast_matrix(targets);
     blast_matrix(features);
+    blast_matrix(targets);
 
     return 0;
 }

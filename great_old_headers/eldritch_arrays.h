@@ -251,8 +251,9 @@ matrix *add_matrices(matrix* A, matrix *B) {
 
 matrix *subtract_matrices(matrix* A, matrix *B) {
     matrix *result = copy_matrix(A);
-    B = multiply_by_scaler(B, -1.0);
-    if (!_add_matrices(result, B)) { blast_matrix(result); return NULL; }
+    matrix* negative_B = multiply_by_scaler(B, -1.0);
+    if (!_add_matrices(result, negative_B)) { blast_matrix(result); blast_matrix(negative_B); return NULL; }
+    blast_matrix(negative_B);
     return result;
 }
 
