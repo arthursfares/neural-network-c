@@ -220,45 +220,54 @@ layer_parameters *multilayer_fit(matrix *features, matrix* targets, size_t netwo
             /* BACKPROPAGATION */
             
             /* calculate output delta */
-            matrix *ones_output_activation = create_ones_matrix(activations[network_data_size-2]->n_rows, activations[network_data_size-2]->n_cols);
-            matrix *output_delta = hadamard_product(subtract_matrices(activations[network_data_size-2], y), hadamard_product(activations[network_data_size-2], subtract_matrices(ones_output_activation, activations[network_data_size-2])));
-            blast_matrix(ones_output_activation);
+            matrix *output_delta = calculate_output_delta(activations[network_data_size-2], y);
 
             /* calculate hidden deltas */
             size_t hidden_deltas_size = network_data_size-2;
             matrix **hidden_deltas = (matrix**) malloc(hidden_deltas_size * sizeof(matrix));
             size_t hidden_index = network_data_size - 3;
             do { 
-                matrix *ones_hidden_activation = create_ones_matrix(activations[hidden_index]->n_rows, activations[hidden_index]->n_cols);
                 if (hidden_index == network_data_size-3) {
-                    hidden_deltas[hidden_index] = hadamard_product(multiply_matrices(transpose(learned_parameters[hidden_index+1].weights), output_delta), hadamard_product(activations[hidden_index], subtract_matrices(ones_hidden_activation, activations[hidden_index])));
+                    hidden_deltas[hidden_index] = calculate_hidden_delta(activations[hidden_index], learned_parameters[hidden_index+1].weights, output_delta);
                 } else {
-                    hidden_deltas[hidden_index] = hadamard_product(multiply_matrices(transpose(learned_parameters[hidden_index+1].weights), hidden_deltas[hidden_index+1]), hadamard_product(activations[hidden_index], subtract_matrices(ones_hidden_activation, activations[hidden_index])));
+                    hidden_deltas[hidden_index] = calculate_hidden_delta(activations[hidden_index], learned_parameters[hidden_index+1].weights, hidden_deltas[hidden_index+1]);
                 }
-                blast_matrix(ones_hidden_activation);
             } while (hidden_index--);
 
             /* update output weights */
-            matrix *output_weights_gradient = multiply_matrices(output_delta, transpose(activations[network_data_size-3]));
-            learned_parameters[network_data_size-2].weights = subtract_matrices(learned_parameters[network_data_size-2].weights, multiply_by_scaler(output_weights_gradient, eta));
-            blast_matrix(output_weights_gradient);
+            matrix *prev_activation_transpose = transpose(activations[network_data_size-3]);
+            matrix *output_weights_gradient = multiply_matrices(output_delta, prev_activation_transpose);
+            matrix *output_weights_gradient_scaled = multiply_by_scaler(output_weights_gradient, eta);
+            matrix *old_output_weights = learned_parameters[network_data_size-2].weights;
+            learned_parameters[network_data_size-2].weights = subtract_matrices(old_output_weights, output_weights_gradient_scaled);
+            blast_matrix(old_output_weights); blast_matrix(output_weights_gradient_scaled); blast_matrix(output_weights_gradient); blast_matrix(prev_activation_transpose);
             /* update output bias */
-            learned_parameters[network_data_size-2].bias = subtract_matrices(learned_parameters[network_data_size-2].bias, multiply_by_scaler(output_delta, eta));
+            matrix *output_delta_scaled = multiply_by_scaler(output_delta, eta);
+            matrix *old_output_bias = learned_parameters[network_data_size-2].bias;
+            learned_parameters[network_data_size-2].bias = subtract_matrices(old_output_bias, output_delta_scaled);
+            blast_matrix(old_output_bias); blast_matrix(output_delta_scaled);
             
             /* update hidden parameters */
             hidden_index = network_data_size - 3;
             do {
                 /* update hidden weights */
-                matrix *hidden_weights_gradient;
+                matrix *input_transpose, *hidden_weights_gradient, *hidden_weights_gradient_scaled, *old_hidden_weights;
                 if (hidden_index == 0) {
-                    hidden_weights_gradient = multiply_matrices(hidden_deltas[hidden_index], transpose(X));
+                    input_transpose = transpose(X);
+                    hidden_weights_gradient = multiply_matrices(hidden_deltas[hidden_index], input_transpose);
                 } else {
-                    hidden_weights_gradient = multiply_matrices(hidden_deltas[hidden_index], transpose(activations[(network_data_size-2)-hidden_index-1]));
+                    input_transpose = transpose(activations[(network_data_size-2)-hidden_index-1]);
+                    hidden_weights_gradient = multiply_matrices(hidden_deltas[hidden_index], input_transpose);
                 }
-                learned_parameters[hidden_index].weights = subtract_matrices(learned_parameters[hidden_index].weights, multiply_by_scaler(hidden_weights_gradient, eta));
-                blast_matrix(hidden_weights_gradient);
+                hidden_weights_gradient_scaled = multiply_by_scaler(hidden_weights_gradient, eta);
+                old_hidden_weights = learned_parameters[hidden_index].weights;
+                learned_parameters[hidden_index].weights = subtract_matrices(old_hidden_weights, hidden_weights_gradient_scaled);
+                blast_matrix(old_hidden_weights); blast_matrix(hidden_weights_gradient_scaled); blast_matrix(hidden_weights_gradient); blast_matrix(input_transpose);
                 /* update hidden bias */
-                learned_parameters[hidden_index].bias = subtract_matrices(learned_parameters[hidden_index].bias, multiply_by_scaler(hidden_deltas[hidden_index], eta));
+                matrix *hidden_deltas_scaled = multiply_by_scaler(hidden_deltas[hidden_index], eta);
+                matrix *old_hidden_bias = learned_parameters[hidden_index].bias;
+                learned_parameters[hidden_index].bias = subtract_matrices(old_hidden_bias, hidden_deltas_scaled);
+                blast_matrix(old_hidden_bias); blast_matrix(hidden_deltas_scaled);
             } while (hidden_index--);
 
             // free allocated memory
@@ -292,10 +301,12 @@ matrix *multilayer_predict(matrix *input, size_t network_data_size, layer_parame
         activations[layer_index-1] = sigmoid_function(Z);
         blast_matrix(Z);
     }
-    for (size_t actv_index = 0; actv_index < activations_size-1; actv_index++) {
+    matrix *output = copy_matrix(activations[activations_size-1]);
+    for (size_t actv_index = 0; actv_index < activations_size; actv_index++) {
         blast_matrix(activations[actv_index]);
     }
-    return activations[activations_size-1];
+    free(activations);
+    return output;
 }
 
 #endif

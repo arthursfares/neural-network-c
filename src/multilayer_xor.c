@@ -3,7 +3,7 @@
 
 #define N_LAYERS 3
 
-const int    ITERATIONS = 3000;
+const int    ITERATIONS = 5000;
 const float  ETA        = 0.5;
 
 int main(int argc, const char *argv[]) {
@@ -39,6 +39,8 @@ int main(int argc, const char *argv[]) {
         printf("result="); print_matrix(result);
         printf("----------------------------------------------\n\n");
         blast_matrix(result);
+        blast_matrix(input);
+        blast_matrix(output);
     }
 
 
@@ -47,8 +49,6 @@ int main(int argc, const char *argv[]) {
         blast_matrix(learned_parameters[param_index].bias);
     }
     free(learned_parameters);
-    blast_matrix(input);
-    blast_matrix(output);
     blast_matrix(targets);
     blast_matrix(features);
 
