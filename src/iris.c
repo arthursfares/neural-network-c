@@ -6,8 +6,8 @@
 const int   N_FEATURES = 4;
 const int   N_NEURONS  = 4;  // test (N_FEATURES/2)+1 for better results
 const int   N_OUTPUTS  = 3;
-const int   ITERATIONS = 4000;
-const float ETA        = 0.15;
+const int   ITERATIONS = 5000;
+const float ETA        = 0.5;
 
 bool is_file_open(FILE *fp) {
     if (fp == NULL) {
@@ -26,9 +26,8 @@ int main(int argc, const char *argv[]) {
     if (!is_file_open(iris_fp)) return -1;
     // we want to store, for 150 flowers, 4 different data, 
     // the petal's and sepal's widths and heights
-    matrix *features = create_matrix(N_FEATURES, 150); // each column contains all the data for one flower
+    // each column contains all the data for one flower
     // the flowers can be setosa (0), versicolor (1) or virginica (2)
-    matrix *targets = create_matrix(N_OUTPUTS, 150);
     // a line utility array will be used to go through the lines of the data file
     // and a string pointer will go through each of the lines comma separeted values.
     matrix *iris_data = create_matrix(N_FEATURES+N_OUTPUTS, 150);
@@ -78,7 +77,10 @@ int main(int argc, const char *argv[]) {
         iris_data->data[6][current_line_index] = virginica;
         //update line index
         current_line_index++;
+        free(current_flower_name);
     } // END csv read loop
+
+    fclose(iris_fp);
 
     printf("sepal length....\t MIN %.1f\t MAX %.1f\n", min_sepal_length, max_sepal_length);
     printf("sepal width.....\t MIN %.1f\t MAX %.1f\n", min_sepal_width, max_sepal_width);
@@ -106,9 +108,9 @@ int main(int argc, const char *argv[]) {
 
     // GET features AND targets from iris_data_shuffled
     // ---
-    features = get_sub_matrix(iris_data_shuffled, 0, N_FEATURES-1, 0, 149);
+    matrix *features = get_sub_matrix(iris_data_shuffled, 0, N_FEATURES-1, 0, 149);
     save_matrix_to_file("matrices/iris/iris_features.mat", features);
-    targets = get_sub_matrix(iris_data_shuffled, N_FEATURES, N_FEATURES+N_OUTPUTS-1, 0 , 149);
+    matrix *targets = get_sub_matrix(iris_data_shuffled, N_FEATURES, N_FEATURES+N_OUTPUTS-1, 0 , 149);
     save_matrix_to_file("matrices/iris/iris_targets.mat", targets);
 
     // NORMALIZATION (linear scaling)
@@ -131,9 +133,12 @@ int main(int argc, const char *argv[]) {
     save_matrix_to_file("matrices/iris/test/features_test.mat", features_test);
     save_matrix_to_file("matrices/iris/test/targets_test.mat", targets_test);
 
-    // ---
+    blast_matrix(targets);
+    blast_matrix(features);
+
+    // // ---
     
-    /* TRAIN */
+    // /* TRAIN */
     parameters learned_parameters = fit(features_train, targets_train, N_FEATURES, N_NEURONS, N_OUTPUTS, ITERATIONS, ETA);
     blast_matrix(features_train);
     blast_matrix(targets_train);
@@ -147,7 +152,7 @@ int main(int argc, const char *argv[]) {
     double loss = 0;
     matrix *input, *output, *result, *target_col;
     for (size_t col = 0; col < features_test->n_cols; col++) {
-        printf("test %d --------- \n\n", col);
+        printf("test %lu --------- \n\n", col);
         target_col = get_col(targets_test, col);
         input = get_col(features_test, col);
         output = predict(input, learned_parameters);
@@ -171,7 +176,7 @@ int main(int argc, const char *argv[]) {
         // calculate mistakes for accuracy
         if (!are_matrices_equal(result, target_col)) {
             mistakes++;
-            printf("\nmistake ate test %d\n", col);
+            printf("\nmistake ate test %lu\n", col);
         }
 
         // add up to loss
@@ -195,14 +200,12 @@ int main(int argc, const char *argv[]) {
     printf("\n\naccuracy %%... %.3f%%\n\n", 100.0*((30.0-(double)mistakes)/30.0));
     printf("loss... %.3f\n\n", -loss);
 
-    // free allocated memory
+    // // free allocated memory
     blast_matrix(learned_parameters.W2);
     blast_matrix(learned_parameters.b1);
     blast_matrix(learned_parameters.W1);
     blast_matrix(learned_parameters.b2);
     blast_matrix(iris_data_shuffled);
-    blast_matrix(targets);
-    blast_matrix(features);
 
     return 0;
 }
